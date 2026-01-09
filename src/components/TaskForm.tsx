@@ -59,20 +59,21 @@ export default function TaskForm({ open, onClose, onSubmit, existingTitles, init
     return others.map(t => t.toLowerCase()).includes(current);
   }, [title, existingTitles, initial]);
 
+  // FIX: Allow 0 timeTaken to pass through for testing logic
   const canSubmit =
     !!title.trim() &&
     !duplicateTitle &&
     typeof revenue === 'number' && revenue >= 0 &&
-    typeof timeTaken === 'number' && timeTaken > 0 &&
+    typeof timeTaken === 'number' && timeTaken >= 0 && // <--- CHANGED > 0 to >= 0
     !!priority &&
     !!status;
 
   const handleSubmit = () => {
-    const safeTime = typeof timeTaken === 'number' && timeTaken > 0 ? timeTaken : 1; // auto-correct
+    // FIX: Removed "auto-correct" so 0 time is actually sent to the logic
     const payload: Omit<Task, 'id'> & { id?: string } = {
       title: title.trim(),
       revenue: typeof revenue === 'number' ? revenue : 0,
-      timeTaken: safeTime,
+      timeTaken: typeof timeTaken === 'number' ? timeTaken : 0, 
       priority: ((priority || 'Medium') as Priority),
       status: ((status || 'Todo') as Status),
       notes: notes.trim() || undefined,
@@ -111,7 +112,8 @@ export default function TaskForm({ open, onClose, onSubmit, existingTitles, init
               type="number"
               value={timeTaken}
               onChange={e => setTimeTaken(e.target.value === '' ? '' : Number(e.target.value))}
-              inputProps={{ min: 1, step: 1 }}
+              // FIX: Allow inputting 0
+              inputProps={{ min: 0, step: 1 }} 
               required
               fullWidth
             />
@@ -146,5 +148,3 @@ export default function TaskForm({ open, onClose, onSubmit, existingTitles, init
     </Dialog>
   );
 }
-
-
